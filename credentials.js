@@ -1,0 +1,5 @@
+module.exoprts = {
+	mongo: {
+		connectionString: ''
+	}
+};
