@@ -1,20 +1,36 @@
+var vm = require('vm');
 var cluster = require('cluster');
-var factorial = function factorial(num) {
-		if(num === 1 || num === 0) return 1;
-		else return num * factorial(num-1);
-	};
-
-if(cluster.isMaster) {
-	console.log('master');
+var fs = require('fs');
+var _ = require('lodash');
+// var vmResult = vm.runInThisContext(process.argv[2]);
+if (cluster.isMaster) {
 	var numWorkers = require('os').cpus().length;
 
 	console.log('Master cluster setting up ' + numWorkers + ' workers...');
 
 	for(var i = 0; i < numWorkers; i++) {
 		var worker = cluster.fork();
+		
 		worker.on('message', function(message) {
-			console.log(message.data.text);
-			// console.log(message.from + ': ' + message.type + ' ' + message.data.number + ' = ' + message.data.result);
+			console.log('MASTER - ', message);
+	
+			if (message.from === 'post') {
+				for(var wid in cluster.workers) {
+					cluster.workers[wid].send({
+						type: 'add_task',
+						from: 'master',
+						task: message.data
+					});
+				}
+			}
+
+			if (message.type === 'task_result') {
+				fs.appendFile('results.txt', JSON.stringify(message.data));
+			}
+		});
+
+		worker.on('error', function(msg) {
+			console.error(msg);
 		});
 	}
 
@@ -22,39 +38,30 @@ if(cluster.isMaster) {
 		console.log('Worker ' + worker.process.pid + ' is online');
 	});
 
-	for(var wid in cluster.workers) {
-		cluster.workers[wid].send({
-			type: 'factorial',
-			from: 'master',
-			data: {
-				number: Math.floor(Math.random() * 50),
-				text: '____form master'
-			}
-		});
-	}
-
 	cluster.on('exit', function(worker, code, signal) {
 		console.log('Worker ' + worker.process.pid + ' died with code: ' + code + ', and signal: ' + signal);
 		console.log('Starting a new worker');
+		
 		var worker = cluster.fork();
 		worker.on('message', function(message) {
 			console.log(message.from + ': ' + message.type + ' ' + message.data.number + ' = ' + message.data.result);
 		});
 	});
 } else {
-	console.log('worker');
 	process.on('message', function(message) {
-		if(message.type === 'factorial') {
-			console.log(message.data.text);
+		if(message.type === 'add_task' && message.from === 'master') {
+			var result = vm.runInThisContext(message.task.text);
+			console.log(message);
+			var data = _.assign(message.task, {
+				result: result,
+				workerPID: process.pid
+			});
 			process.send({
-				type:'factorial',
+				type:'task_result',
 				from: 'Worker ' + process.pid,
-				data: {
-					number: message.data.number,
-					result: factorial(message.data.number),
-					text: '!!!!! from'+process.pid
-				}
+				data: data
 			});
 		}
 	});
+	require('../server');
 }

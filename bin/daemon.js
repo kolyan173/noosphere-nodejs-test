@@ -68,12 +68,12 @@
 // createWorkers('node -v');
 // // module.exports = createWorkers;
 
-
 var cluster = require('cluster');
 var path = require('path');
-
+console.log('CALLLED');
 
 module.exports = function(task) {
+	console.log('INSIDE');
 	var config = {
 	    numWorkers: require('os').cpus().length,
 	};

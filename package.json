@@ -11,8 +11,14 @@
   "dependencies": {
     "body-parser": "^1.13.3",
     "cluster": "^0.7.7",
+    "crypto": "0.0.3",
     "daemon": "^1.1.0",
+    "ejs": "^2.3.4",
     "express": "^4.13.3",
-    "method-override": "^2.3.5"
+    "express-ejs-layouts": "^1.1.0",
+    "lodash": "^3.10.1",
+    "method-override": "^2.3.5",
+    "mongoose": "^4.1.6",
+    "passport": "^0.3.0"
   }
 }
