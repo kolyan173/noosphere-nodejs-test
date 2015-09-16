@@ -1,18 +1,28 @@
 var Task = require('../../models/Task');
+var User = require('../../models/User');
 
-module.addTask = function(req, res) {
+exports.addTask = function(req, res) {
 	process.send({
-		from: 'post',
+		type: 'addTaskHandler',
 		data: {
 			text: req.body.task,
-			timsestamp: Date.now()
+			_creator: req.session.passport.user
 		}
 	});
 	res.redirect('/');
 };
 
 exports.resultList = function(req, res) {
-	Task().find(function(err, items) {
-		res.json({ items: items });
-	});
+	Task.find({_creator: req.session.passport.user})
+		.exec(function(err, items) {
+			res.render('results', {
+				results: items,
+				headColumns: [
+					'workerPID',
+					'timestamp',
+					'text',
+					'result'
+				]			
+			});
+		});
 };

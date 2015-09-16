@@ -1,16 +1,21 @@
 <table class="table table-hover">
 	<thead>
 		<tr>
-			<% for (var key in headColumns) {%>
-				<th><%= key %></th>
+			<% for (var n=0; n < headColumns.length; n++) {%>
+				<th><%= headColumns[n] %></th>
 			<%} %>
 		</tr>
 	</thead>
 	<tbody class="bs-glyphicons">
 		<% for (var i=0; i < results.length; i++) {%>
 			<tr>
-				<% for (var key in headColumns) {%>
-					<td><%= headColumns[key] %></td>
+				<% for (var k=0; k < headColumns.length; k++) {%>
+					<% if (headColumns[k] === 'timestamp') {%>
+						<td><%= results[i][headColumns[k]].toLocaleString() %></td>
+
+					<%} else {%>
+					<td><%= results[i][headColumns[k]] %></td>
+					<%} %>
 				<%} %>
 			</tr>
 		<%} %>

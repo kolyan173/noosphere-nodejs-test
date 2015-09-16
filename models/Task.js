@@ -6,7 +6,7 @@ var TaskSchema = Schema({
 	result: { type: String, default: '' },
 	workerPID: { type: String, default: '' },
 	timestamp: { type: Date, default: Date.now },
-	_creator: { type: Number, ref: 'User' }
+	_creator: { type: String, ref: 'User' }
 });
 
 var Task = mongoose.model('Task', TaskSchema);

@@ -2,7 +2,9 @@ var vm = require('vm');
 var cluster = require('cluster');
 var fs = require('fs');
 var _ = require('lodash');
-// var vmResult = vm.runInThisContext(process.argv[2]);
+var Task = require('../models/Task');
+var workerHandle = require('./worker');
+
 if (cluster.isMaster) {
 	var numWorkers = require('os').cpus().length;
 
@@ -12,20 +14,25 @@ if (cluster.isMaster) {
 		var worker = cluster.fork();
 		
 		worker.on('message', function(message) {
-			console.log('MASTER - ', message);
-	
-			if (message.from === 'post') {
-				for(var wid in cluster.workers) {
-					cluster.workers[wid].send({
-						type: 'add_task',
+			switch(message.type) {
+				case 'addTaskHandler':
+					for(var wid in cluster.workers) {
+						cluster.workers[wid].send({
+							type: 'add_task',
+							from: 'master',
+							task: message.data
+						});
+					}
+					break;
+				case 'task_result':
+					worker.send({
 						from: 'master',
-						task: message.data
+						type: 'handleTaskResult',
+						data: message.data
 					});
-				}
-			}
-
-			if (message.type === 'task_result') {
-				fs.appendFile('results.txt', JSON.stringify(message.data));
+					break;
+				default:
+					break;
 			}
 		});
 
@@ -51,10 +58,9 @@ if (cluster.isMaster) {
 	process.on('message', function(message) {
 		if(message.type === 'add_task' && message.from === 'master') {
 			var result = vm.runInThisContext(message.task.text);
-			console.log(message);
 			var data = _.assign(message.task, {
-				result: result,
-				workerPID: process.pid
+				result: result.toString(),
+				workerPID: process.pid.toString()
 			});
 			process.send({
 				type:'task_result',
